@@ -13,3 +13,7 @@ __pycache__/
 
 # data files
 data/senteval_data*
+examples/infersent1.pkl
+examples/infersent2.pkl
+data/downstream
+
