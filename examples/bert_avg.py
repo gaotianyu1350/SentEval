@@ -1,48 +1,43 @@
-# Copyright (c) 2017-present, Facebook, Inc.
-# All rights reserved.
-#
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
-#
-
-"""
-InferSent models. See https://github.com/facebookresearch/InferSent.
-"""
-
 from __future__ import absolute_import, division, unicode_literals
 
 import sys
 import os
 import torch
 import logging
-
-# get models.py from InferSent repo
-from models import InferSent
-
-# Set PATHs
-PATH_SENTEVAL = '../'
-PATH_TO_DATA = '../data'
-PATH_TO_W2V = 'data/glove.840B.300d.txt'  # or crawl-300d-2M.vec for V2
-MODEL_PATH = 'data/infersent1.pkl'
-V = 1 # version of InferSent
-
-assert os.path.isfile(MODEL_PATH) and os.path.isfile(PATH_TO_W2V), \
-    'Set MODEL and GloVe PATHs'
+import argparse
 
 # import senteval
+PATH_SENTEVAL = '../'
+PATH_TO_DATA = '../data'
+
 sys.path.insert(0, PATH_SENTEVAL)
 import senteval
-
+import transformers
+from transformers import BertModel, BertTokenizer
 
 def prepare(params, samples):
-    params.infersent.build_vocab([' '.join(s) for s in samples], tokenize=False)
-
+    pass
 
 def batcher(params, batch):
     sentences = [' '.join(s) for s in batch]
-    embeddings = params.infersent.encode(sentences, bsize=params.batch_size, tokenize=False)
-    return embeddings
+    batch = params['tokenizer'].batch_encode_plus(
+            sentences,
+            add_special_tokens=True,
+            max_length=128,
+            pad_to_max_length=True,
+            return_tensors='pt',
+            return_attention_masks=True)
+    input_ids = batch['input_ids'].cuda()
+    att_mask = batch['attention_mask'].cuda()
+    with torch.no_grad():
+        seq, _ = params['model'](input_ids, attention_mask=att_mask) # (B, L, H)
+        emb = []
+        length = (att_mask == 1).sum(-1)
+        for i in range(seq.size(0)):
+            emb.append(seq[i][1:length[i]-1].mean(0))
+        emb = torch.stack(emb)
 
+    return emb.cpu()
 
 """
 Evaluation of trained model on Transfer Tasks (SentEval)
@@ -56,14 +51,15 @@ params_senteval['classifier'] = {'nhid': 0, 'optim': 'rmsprop', 'batch_size': 12
 logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
 
 if __name__ == "__main__":
-    # Load InferSent model
-    params_model = {'bsize': 64, 'word_emb_dim': 300, 'enc_lstm_dim': 2048,
-                    'pool_type': 'max', 'dpout_model': 0.0, 'version': V}
-    model = InferSent(params_model)
-    model.load_state_dict(torch.load(MODEL_PATH))
-    model.set_w2v_path(PATH_TO_W2V)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', default='bert-base-uncased', help='model name or path')
+    args = parser.parse_args()
 
-    params_senteval['infersent'] = model.cuda()
+    model = BertModel.from_pretrained(args.model)
+    tokenizer = BertTokenizer.from_pretrained(args.model)
+
+    params_senteval['model'] = model.cuda()
+    params_senteval['tokenizer'] = tokenizer
 
     se = senteval.engine.SE(params_senteval, batcher, prepare)
     transfer_tasks = ['STS12', 'STS13', 'STS14', 'STS15', 'STS16',

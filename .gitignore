@@ -16,3 +16,4 @@ data/senteval_data*
 data/downstream
 examples/data
 
+*.swp

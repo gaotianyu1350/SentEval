@@ -68,58 +68,9 @@ if __name__ == "__main__":
     se = senteval.engine.SE(params_senteval, batcher, prepare)
     transfer_tasks = ['STS12', 'STS13', 'STS14', 'STS15', 'STS16',
                       'MR', 'CR', 'MPQA', 'SUBJ', 'SST2', 'SST5', 'TREC', 'MRPC',
-                      'SICKEntailment', 'SICKRelatedness', 'STSBenchmark']
-
+                      'SICKEntailment', 'SICKRelatedness', 'STSBenchmark',
+                      'Length', 'WordContent', 'Depth', 'TopConstituents',
+                      'BigramShift', 'Tense', 'SubjNumber', 'ObjNumber',
+                      'OddManOut', 'CoordinationInversion']
     results = se.eval(transfer_tasks)
-
-    sts_task_list = ['STS12', 'STS13', 'STS14', 'STS15', 'STS16', 'STSBenchmark', 'SICKRelatedness']
-    other_task_list = ['MR', 'CR', 'SUBJ', 'MPQA', 'SST2', 'SST5', 'TREC', 'MRPC', 'SICKEntailment']
-
-    # STS pearson
-    print("######### STS pearson ###########")
-    summ = 0
-    s_title = ''
-    s_result = ''
-    for task in sts_task_list:
-        try:
-            task_result = results[task]['all']['pearson']['mean'] * 100
-        except:
-            task_result = results[task]['pearson'] * 100
-        s_title += '%6s' % (task[:5])
-        s_result += ' %.2f' % (task_result)
-        summ += task_result
-    print(s_title)
-    print(s_result)
-    print('avg: %.2f' % (summ / len(sts_task_list)))
-
-    # STS spearman
-    print("######### STS spearman ###########")
-    summ = 0
-    s_title = ''
-    s_result = ''
-    for task in sts_task_list:
-        try:
-            task_result = results[task]['all']['spearman']['mean'] * 100
-        except:
-            task_result = results[task]['spearman'] * 100
-        s_title += '%6s' % (task[:5])
-        s_result += ' %.2f' % (task_result)
-        summ += task_result
-    print(s_title)
-    print(s_result)
-    print('avg: %.2f' % (summ / len(sts_task_list)))
-
-    # Other
-    print("######### Other ###########")
-    summ = 0
-    s_title = ''
-    s_result = ''
-    for task in other_task_list:
-        task_result = results[task]['acc']
-        s_title += '%6s' % (task[:5])
-        s_result += ' %.2f' % (task_result)
-        summ += task_result
-    print(s_title)
-    print(s_result)
-    print('avg: %.2f' % (summ / len(other_task_list)))
-
+    print(results)
