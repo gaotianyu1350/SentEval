@@ -48,6 +48,8 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', default='bert-base-uncased', help='model name or path')
+    parser.add_argument('--linguistic', action='store_true')
+    parser.add_argument('--avg', action='store_true')
     args = parser.parse_args()
 
     model = BertModel.from_pretrained(args.model)
@@ -60,6 +62,8 @@ if __name__ == "__main__":
     transfer_tasks = ['STS12', 'STS13', 'STS14', 'STS15', 'STS16',
                       'MR', 'CR', 'MPQA', 'SUBJ', 'SST2', 'SST5', 'TREC', 'MRPC',
                       'SICKEntailment', 'SICKRelatedness', 'STSBenchmark']
+    
+    linguistic_tasks = ['SentLen', 'WC', 'TreeDepth', 'TopConst', 'BShift', 'Tense', 'SubjNum', 'ObjNum', 'SOMO', 'Coordlnv']
 
     results = se.eval(transfer_tasks)
 
